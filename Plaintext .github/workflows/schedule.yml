@@ -1,0 +1,27 @@
+name: Daily Market Briefing Bot
+
+on:
+  schedule:
+    # 매일 한국시간 오후 7시 (영국 표준시 UTC 10:00) 자동 실행
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: 2. 파이썬 환경 세팅
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: 3. 통신 라이브러리(requests) 설치
+        run: |
+          pip install requests
+
+      - name: 4. 종가베팅비서 봇 실행
+        run: |
+          python bot.py
