@@ -3,6 +3,7 @@ import requests
 # ==========================================
 # 1. 봇 토큰과 챗 ID, API 키 설정
 # ==========================================
+# 투자자님의 정상적인 AQ 키 적용 완료
 GEMINI_API_KEY = "AQ.Ab8RN6JHYSC3NtrAipp-tVN1Ji2nK9z-TSAUDc5VLbyr57GprQ"
 
 TELEGRAM_BOT_TOKEN = "8797523125:AAHYzdzNqa3tNVrkH59wRsrhtucoqCvfOKA"
@@ -51,13 +52,12 @@ def send_telegram_message(text):
         raise Exception(f"텔레그램 발송 실패: {response.text}")
 
 def get_gemini_response(prompt_text):
-    # ✅ 404 에러 해결: 모델명에 -latest 추가 완료
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+    # ✅ 정식 모델명 적용 완료 (충돌을 일으키던 검색 툴 파라미터 완전 삭제)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     data = {
-        "contents": [{"parts": [{"text": prompt_text}]}],
-        "tools": [{"googleSearch": {}}]
+        "contents": [{"parts": [{"text": prompt_text}]}]
     }
     
     response = requests.post(url, headers=headers, json=data)
@@ -75,7 +75,7 @@ def get_gemini_response(prompt_text):
     return parts[0].get('text', '⚠️ 텍스트를 찾을 수 없습니다.')
 
 try:
-    print("🌐 AI가 인터넷 브라우저를 열고 실시간 검색을 시작했습니다...\n")
+    print("🌐 AI 분석을 시작합니다...\n")
     report = get_gemini_response(prompt)
     
     print("========== [수집된 시황 브리핑 원본] ==========")
