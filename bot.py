@@ -50,18 +50,18 @@ def send_telegram_message(text):
         raise Exception(f"텔레그램 발송 실패: {response.text}")
 
 def get_gemini_response(prompt_text):
-    # ✅ 투자자님이 처음 작성하셨던 정확한 최신 모델명으로 복구 완료
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
+    # 가장 안정적인 gemini-1.5-flash 모델 사용
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
+    # 🚨 충돌을 일으키던 "tools": [{"googleSearch": {}}] 부분 완전 삭제
     data = {
-        "contents": [{"parts": [{"text": prompt_text}]}],
-        "tools": [{"googleSearch": {}}]
+        "contents": [{"parts": [{"text": prompt_text}]}]
     }
     
     response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
-        raise Exception(f"구글 API 에러: {response.text}")
+        raise Exception(f"구글 API 에러 ({response.status_code}): {response.text}")
         
     candidates = response.json().get('candidates', [])
     if not candidates:
@@ -74,7 +74,7 @@ def get_gemini_response(prompt_text):
     return parts[0].get('text', '⚠️ 텍스트를 찾을 수 없습니다.')
 
 try:
-    print("🌐 AI가 인터넷 브라우저를 열고 실시간 검색을 시작했습니다...\n")
+    print("🌐 AI 분석을 시작합니다 (검색 툴 제외)...\n")
     report = get_gemini_response(prompt)
     
     print("========== [수집된 시황 브리핑 원본] ==========")
