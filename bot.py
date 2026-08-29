@@ -5,7 +5,7 @@ import os
 # 1. 봇 토큰과 챗 ID, API 키 설정 (수정 완료)
 # ==========================================
 # 깃허브 Secrets에 저장된 진짜 API 키를 자동으로 불러옵니다.
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") 
+GEMINI_API_KEY = "AQ.Ab8RN6JHYSC3NtrAipp-tVN1Ji2nK9z-TSAUDc5VLbyr57GprQ"
 
 TELEGRAM_BOT_TOKEN = "8797523125:AAHYzdzNqa3tNVrkH59wRsrhtucoqCvfOKA"
 TELEGRAM_CHAT_ID = "184097714"
