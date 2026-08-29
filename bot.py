@@ -1,9 +1,12 @@
 import requests
+import os
 
 # ==========================================
-# 1. 봇 토큰과 챗 ID, API 키 설정
+# 1. 봇 토큰과 챗 ID, API 키 설정 (수정 완료)
 # ==========================================
-GEMINI_API_KEY = "AQ.Ab8RN6IXjFxt7POxz_CnioJD32gZ3mLWU0TlDrvXAB7vXklvtA"
+# 깃허브 Secrets에 저장된 진짜 API 키를 자동으로 불러옵니다.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") 
+
 TELEGRAM_BOT_TOKEN = "8797523125:AAHYzdzNqa3tNVrkH59wRsrhtucoqCvfOKA"
 TELEGRAM_CHAT_ID = "184097714"
 
@@ -50,7 +53,8 @@ def send_telegram_message(text):
         raise Exception(f"텔레그램 발송 실패: {response.text}")
 
 def get_gemini_response(prompt_text):
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
+    # 유령 모델명 수정 완료 (gemini-1.5-flash)
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     data = {
@@ -70,7 +74,7 @@ def get_gemini_response(prompt_text):
     if not parts:
         return "⚠️ 텍스트 파트가 비어있습니다."
         
-    return parts[0].get('text', '⚠️ 텍스트를 찾을 수 없습니다.')
+    return parts[0].get('text', '⚠️ 텍스트를 찾을 수 정없습니다.')
 
 try:
     print("🌐 AI가 인터넷 브라우저를 열고 실시간 검색을 시작했습니다...\n")
