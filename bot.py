@@ -1,10 +1,10 @@
 import requests
+import json
 
 # ==========================================
 # 1. 봇 토큰과 챗 ID, API 키 설정
 # ==========================================
 GEMINI_API_KEY = "AQ.Ab8RN6JHYSC3NtrAipp-tVN1Ji2nK9z-TSAUDc5VLbyr57GprQ"
-
 TELEGRAM_BOT_TOKEN = "8797523125:AAHYzdzNqa3tNVrkH59wRsrhtucoqCvfOKA"
 TELEGRAM_CHAT_ID = "184097714"
 
@@ -51,8 +51,8 @@ def send_telegram_message(text):
         raise Exception(f"텔레그램 발송 실패: {response.text}")
 
 def get_gemini_response(prompt_text):
-    # ✅ 가장 안정적인 기본 모델(gemini-pro)로 원천 변경 완료
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={GEMINI_API_KEY}"
+    # ✅ 최신 v1 엔드포인트 및 모델 자동 매핑 구조 적용 (404 에러 원천 차단)
+    url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
     
     data = {
