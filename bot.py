@@ -40,61 +40,51 @@ prompt = """
 """
 
 # ==========================================
-# 3. AI 실행 및 텔레그램 발송 (자동 모델 추적 기능)
+# 3. AI 실행 및 텔레그램 발송
 # ==========================================
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": text[:4000]})
+    safe_text = text[:4000] 
+    response = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": safe_text})
+    if response.status_code != 200:
+        raise Exception(f"텔레그램 발송 실패: {response.text}")
 
-try:
-    print("🔍 1단계: API 키에 허락된 AI 모델 목록을 구글에 직접 조회합니다...")
-    list_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={GEMINI_API_KEY}"
-    list_response = requests.get(list_url)
-    
-    if list_response.status_code != 200:
-        raise Exception(f"모델 목록 조회 실패 (API 키 권한 문제일 수 있습니다): {list_response.text}")
-        
-    models_data = list_response.json().get('models', [])
-    
-    # generateContent(텍스트 생성) 기능을 지원하는 모델만 필터링
-    valid_models = [m['name'] for m in models_data if 'generateContent' in m.get('supportedGenerationMethods', [])]
-    
-    if not valid_models:
-        raise Exception("해당 API 키로 사용할 수 있는 텍스트 생성 모델이 하나도 존재하지 않습니다.")
-        
-    print(f"✅ 사용 가능한 모델 목록: {valid_models}")
-    
-    # 1.5-flash 모델을 우선적으로 찾고, 없으면 구글이 허락한 첫 번째 모델을 무조건 사용
-    selected_model = valid_models[0]
-    for model_name in valid_models:
-        if "1.5-flash" in model_name:
-            selected_model = model_name
-            break
-            
-    print(f"🚀 최종 선택된 모델: {selected_model}")
-    print("\n🌐 2단계: 선택된 모델로 시황 분석을 시작합니다...")
-    
-    # 선택된 모델 이름(예: models/gemini-1.5-flash)을 URL에 정확히 삽입
-    model_path = selected_model if selected_model.startswith("models/") else f"models/{selected_model}"
-    
-    generate_url = f"https://generativelanguage.googleapis.com/v1beta/{model_path}:generateContent?key={GEMINI_API_KEY}"
+def get_gemini_response(prompt_text):
+    # ✅ 투자자님이 처음 작성하셨던 정확한 최신 모델명으로 복구 완료
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
     headers = {'Content-Type': 'application/json'}
-    data = {"contents": [{"parts": [{"text": prompt}]}]}
     
-    response = requests.post(generate_url, headers=headers, json=data)
+    data = {
+        "contents": [{"parts": [{"text": prompt_text}]}],
+        "tools": [{"googleSearch": {}}]
+    }
+    
+    response = requests.post(url, headers=headers, json=data)
     if response.status_code != 200:
         raise Exception(f"구글 API 에러: {response.text}")
         
-    result_text = response.json().get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text', '⚠️ 결과 없음')
+    candidates = response.json().get('candidates', [])
+    if not candidates:
+        return "⚠️ AI가 답변을 생성하지 못했습니다."
+    
+    parts = candidates[0].get('content', {}).get('parts', [])
+    if not parts:
+        return "⚠️ 텍스트 파트가 비어있습니다."
+        
+    return parts[0].get('text', '⚠️ 텍스트를 찾을 수 없습니다.')
+
+try:
+    print("🌐 AI가 인터넷 브라우저를 열고 실시간 검색을 시작했습니다...\n")
+    report = get_gemini_response(prompt)
     
     print("========== [수집된 시황 브리핑 원본] ==========")
-    print(result_text)
+    print(report)
     print("==============================================\n")
     
-    send_telegram_message(result_text)
+    send_telegram_message(report)
     print("✅ 텔레그램 발송 완벽 성공! (휴대폰을 확인해주세요)")
 
 except Exception as e:
-    error_msg = f"🚨 시스템 오류 발생: {e}"
-    print(error_msg)
-    send_telegram_message(error_msg)
+    print(f"🚨 시스템 오류 발생: {e}")
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": str(e)[:4000]})
