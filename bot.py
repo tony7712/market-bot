@@ -49,15 +49,24 @@ prompt = """
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     safe_text = text[:4000]
-    response = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": safe_text})
-    if response.status_code != 200:
-        raise Exception(f"텔레그램 발송 실패: {response.text}")
+    requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": safe_text})
 
 try:
-    print("🌐 구글 공식 SDK를 통해 AI 분석을 시작합니다...\n")
+    print("🔍 1단계: API 키에 허락된 AI 모델을 자동 검색합니다...")
     
-    # 공식 SDK를 사용하여 모델 호출 (URL 직접 입력 방식 탈피)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    valid_models = []
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            valid_models.append(m.name)
+            
+    if not valid_models:
+        raise Exception("해당 API 키로 텍스트 생성을 지원하는 모델이 없습니다.")
+        
+    # 고객님의 키에서 읽어온 '첫 번째 실제 모델 이름'을 강제 적용
+    target_model = valid_models[0]
+    print(f"🚀 2단계: 자동 선택된 모델({target_model})로 시황 분석을 시작합니다...\n")
+    
+    model = genai.GenerativeModel(target_model)
     response = model.generate_content(prompt)
     
     report = response.text
@@ -72,4 +81,4 @@ try:
 except Exception as e:
     error_msg = f"🚨 시스템 오류 발생: {e}"
     print(error_msg)
-    send_telegram_message(error_msg[:4000])
+    send_telegram_message(error_msg)
