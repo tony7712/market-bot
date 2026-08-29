@@ -1,4 +1,5 @@
 import requests
+import google.generativeai as genai
 
 # ==========================================
 # 1. 봇 토큰과 챗 ID, API 키 설정
@@ -6,6 +7,9 @@ import requests
 GEMINI_API_KEY = "AQ.Ab8RN6JHYSC3NtrAipp-tVN1Ji2nK9z-TSAUDc5VLbyr57GprQ"
 TELEGRAM_BOT_TOKEN = "8797523125:AAHYzdzNqa3tNVrkH59wRsrhtucoqCvfOKA"
 TELEGRAM_CHAT_ID = "184097714"
+
+# 구글 공식 SDK에 API 키 등록
+genai.configure(api_key=GEMINI_API_KEY)
 
 # ==========================================
 # 2. 실전 최적화 마스터 프롬프트
@@ -44,38 +48,19 @@ prompt = """
 # ==========================================
 def send_telegram_message(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    safe_text = text[:4000] 
+    safe_text = text[:4000]
     response = requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": safe_text})
     if response.status_code != 200:
         raise Exception(f"텔레그램 발송 실패: {response.text}")
 
-def get_gemini_response(prompt_text):
-    # 가장 안정적인 gemini-1.5-flash 모델 사용
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
-    headers = {'Content-Type': 'application/json'}
-    
-    # 🚨 충돌을 일으키던 "tools": [{"googleSearch": {}}] 부분 완전 삭제
-    data = {
-        "contents": [{"parts": [{"text": prompt_text}]}]
-    }
-    
-    response = requests.post(url, headers=headers, json=data)
-    if response.status_code != 200:
-        raise Exception(f"구글 API 에러 ({response.status_code}): {response.text}")
-        
-    candidates = response.json().get('candidates', [])
-    if not candidates:
-        return "⚠️ AI가 답변을 생성하지 못했습니다."
-    
-    parts = candidates[0].get('content', {}).get('parts', [])
-    if not parts:
-        return "⚠️ 텍스트 파트가 비어있습니다."
-        
-    return parts[0].get('text', '⚠️ 텍스트를 찾을 수 없습니다.')
-
 try:
-    print("🌐 AI 분석을 시작합니다 (검색 툴 제외)...\n")
-    report = get_gemini_response(prompt)
+    print("🌐 구글 공식 SDK를 통해 AI 분석을 시작합니다...\n")
+    
+    # 공식 SDK를 사용하여 모델 호출 (URL 직접 입력 방식 탈피)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    response = model.generate_content(prompt)
+    
+    report = response.text
     
     print("========== [수집된 시황 브리핑 원본] ==========")
     print(report)
@@ -85,6 +70,6 @@ try:
     print("✅ 텔레그램 발송 완벽 성공! (휴대폰을 확인해주세요)")
 
 except Exception as e:
-    print(f"🚨 시스템 오류 발생: {e}")
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    requests.post(url, json={"chat_id": TELEGRAM_CHAT_ID, "text": str(e)[:4000]})
+    error_msg = f"🚨 시스템 오류 발생: {e}"
+    print(error_msg)
+    send_telegram_message(error_msg[:4000])
